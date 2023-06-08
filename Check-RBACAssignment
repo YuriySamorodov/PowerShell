@@ -1,0 +1,26 @@
+$p = "informationAction"
+foreach ( $a in $assignments ) {
+$role = Get-ManagementRole -Identity $a
+try {
+$assignee = Get-ADGroup $a.RoleAssignee.ToString().Split('/')[-1]
+$members = Get-ADGroupMember -Identity $assignee.Name -Recursive | Get-ADUser
+} catch { $assignee =$a.RoleAssignee
+$members = "None"
+} 
+$entries = Get-ManagementRoleEntry -Identity $role
+$fentries = $entries | where { $_.Parameters -match $p }
+if ( $fentries.count -gt 0 ) {
+foreach ( $e in $fentries ) {
+$params = $e.Parameters | where { $_ -match $p }
+$props = [ordered]@{
+Assignment = $a.Name
+Assignee =  $assignee.name
+Members = $members.name
+Role = $role.Name
+Cmdlet = $e.Name
+Parameters = $params
+}
+New-Object psobject -Property $props
+}
+}
+}
